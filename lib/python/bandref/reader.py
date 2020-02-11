@@ -164,9 +164,10 @@ class BandReferenceReader:
         try:
             shortcut, band = band_reference.split('_')
         except ValueError:
-            raise BandReferenceReaderError("Invalid band identifier <{}>".format(
-                band_reference
-            ))
+            return None
+            # raise BandReferenceReaderError("Invalid band identifier <{}>".format(
+            #    band_reference
+            # ))
 
         for filename, config in self.config.items():
             for root in config.keys():
