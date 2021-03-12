@@ -23,6 +23,7 @@ for details.
 """
 from __future__ import print_function
 from .base import SQLDatabaseInterface
+from .core import get_tgis_db_version_from_metadata
 
 ###############################################################################
 
@@ -1342,7 +1343,8 @@ class STRDSMetadata(STDSRasterMetadataBase):
             self, "strds_metadata", ident, title, description
         )
 
-        self.D["number_of_bands"] = None
+        if get_tgis_db_version_from_metadata() > 2:
+            self.D["number_of_bands"] = None
 
         self.set_raster_register(raster_register)
 
