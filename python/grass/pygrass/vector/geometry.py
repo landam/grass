@@ -282,7 +282,7 @@ class Geo(object):
         c_cats=None,
         table=None,
         writeable=False,
-        is2D=True,
+        is2D=None,
         free_points=False,
         free_cats=False,
     ):
