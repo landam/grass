@@ -225,6 +225,11 @@ class LocationDownloadPanel(wx.Panel):
         self.locations = locations
         self._abort_btn_label = _("Abort")
         self._abort_btn_tooltip = _("Abort download location")
+        self._infobar_message_btn_id = wx.NewIdRef()
+        self._infobar_message_btns = {
+            "addBtn": None,
+            "removeBtn": None,
+        }
 
         self.label = StaticText(
             parent=self, label=_("Select sample location to download:")
@@ -305,6 +310,7 @@ class LocationDownloadPanel(wx.Panel):
 
         :param object event: event object
         """
+        self._infobar_message_btns["addBtn"] = True
         if self._download_in_progress:
             self.thread.Terminate()
             # Clean up after urllib urlretrieve which is used internally
@@ -317,6 +323,9 @@ class LocationDownloadPanel(wx.Panel):
             self.thread = gThread()
             self._change_download_btn_label()
             self.parent.Show(True)
+            self._infobar_message_btns.update(
+                dict(zip(("addBtn", "removeBtn"), (False, True))),
+            )
 
     def OnAbort(self, event):
         """Info bar widget abort button event handler
@@ -327,6 +336,9 @@ class LocationDownloadPanel(wx.Panel):
 
     def OnDownload(self, event):
         """Handle user-initiated action of download"""
+        self._infobar_message_btns.update(
+            dict(zip(("addBtn", "removeBtn"), (True, False))),
+        )
         button_label = self.parent.download_button.GetLabel()
         if button_label in (_("Download"), _("Do&wnload")):
             self._change_download_btn_label(
@@ -352,10 +364,18 @@ class LocationDownloadPanel(wx.Panel):
         if hasattr(self.parent, "showInfoBarMessage"):
             self.parent.showInfoBarMessage.emit(
                 message=message,
-                buttons=[(self._abort_btn_label, self.OnAbort)]
+                buttons=[
+                    {
+                        "id": self._infobar_message_btn_id,
+                        "label": self._abort_btn_label,
+                        "handler": self.OnAbort,
+                        "btnsAction": self._infobar_message_btns,
+                    }
+                ]
                 if buttons is None
                 else buttons,
             )
+            self._infobar_message_btns["addBtn"] = False
 
     def DownloadItem(self, item):
         """Download the selected item"""
@@ -368,11 +388,15 @@ class LocationDownloadPanel(wx.Panel):
             self._error(
                 _("Location named <%s> already exists," " download canceled") % dirname
             )
+            self._infobar_message_btns.update(
+                dict(zip(("addBtn", "removeBtn"), (False, True))),
+            )
             self._change_download_btn_label()
             return
 
         def download_complete_callback(event):
             self._download_in_progress = False
+            self._infobar_message_btns["addBtn"] = True
             errors = event.ret
             if errors:
                 self._error(_("Download failed: %s") % errors)
@@ -385,6 +409,9 @@ class LocationDownloadPanel(wx.Panel):
                     )
                 )
                 self.parent.newLocationIsDownloaded.emit()
+            self._infobar_message_btns.update(
+                dict(zip(("addBtn", "removeBtn"), (False, True))),
+            )
             self._change_download_btn_label()
             self.parent.Show(True)
 
@@ -408,6 +435,7 @@ class LocationDownloadPanel(wx.Panel):
     def CheckItem(self, item):
         """Check what user selected and report potential issues"""
         # similar code as in DownloadItem
+        self._infobar_message_btns["addBtn"] = True
         url = item["url"]
         dirname = location_name_from_url(url)
         destination = os.path.join(self.database, dirname)
@@ -415,6 +443,7 @@ class LocationDownloadPanel(wx.Panel):
             self._warning(
                 _("Location named <%s> already exists," " rename it first") % dirname
             )
+            self._infobar_message_btns["addBtn"] = False
             if hasattr(self.parent, "download_button"):
                 self.parent.download_button.SetLabel(label=_("Download"))
             return
