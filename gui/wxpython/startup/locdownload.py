@@ -405,7 +405,7 @@ class LocationDownloadPanel(wx.Panel):
                 self._warning(
                     _(
                         "Download completed. The downloaded sample data is listed "
-                        "in the location/mapset tabs upon closing of this window"
+                        "in the current GRASS data directory"
                     )
                 )
                 self.parent.newLocationIsDownloaded.emit()
